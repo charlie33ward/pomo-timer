@@ -113,8 +113,6 @@ return helium(function(param, view)
 
     local mainTimer = mainTimerFactory(param, view.w, view.h)
 
-    local iconCanvas = love.graphics.newCanvas()
-
     local x = math.floor(view.w * 0.7)
     local y = math.floor(view.h * 0.32)
     local workButton = circleButtonFactory({
@@ -126,18 +124,6 @@ return helium(function(param, view)
         iconFilled = workIconFilled,
         iconScale = 0.7,
         iconOffset = {x = 0, y = -3}
-    }, view.w, view.h)
-
-    y = math.floor(view.h * 0.8)
-    local longRestButton = circleButtonFactory({
-        buttonColor = palette.accent3,
-        backgroundColor = palette.background,
-        x = x, 
-        y = y, 
-        icon = longRestIcon,
-        iconFilled = longRestIconFilled,
-        iconScale = 0.7,
-        iconOffset = {x = 0, y = 0}
     }, view.w, view.h)
 
     x = x + math.floor(view.w * 0.12)
@@ -152,14 +138,28 @@ return helium(function(param, view)
         iconScale = 0.7,
         iconOffset = {x = 0, y = 0}
     }, view.w, view.h)
-    
 
+    local x = math.floor(view.w * 0.7)
+    y = math.floor(view.h * 0.8)
+    local longRestButton = circleButtonFactory({
+        buttonColor = palette.accent3,
+        backgroundColor = palette.background,
+        x = x, 
+        y = y, 
+        icon = longRestIcon,
+        iconFilled = longRestIconFilled,
+        iconScale = 0.7,
+        iconOffset = {x = 0, y = 0}
+    }, view.w, view.h)
+
+    
     return function()
         love.graphics.setColor(palette.background[1], palette.background[2], palette.background[3], 1)
         love.graphics.rectangle('fill', 0, 0, view.w, view.h)
         love.graphics.setColor(1, 1, 1, 1)
 
         mainTimer:draw()
+
         workButton:draw()
         shortRestButton:draw()
         longRestButton:draw()

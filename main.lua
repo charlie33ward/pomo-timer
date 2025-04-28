@@ -1,4 +1,4 @@
-love.graphics.setDefaultFilter("nearest", "nearest")
+love.graphics.setDefaultFilter("linear", "linear")
 
 local timer = require 'libraries.timer'
 local anim8 = require 'libraries.anim8'
@@ -8,7 +8,7 @@ local timerLayout = require 'scripts.ui-modules.timerLayout'
 
 local palettes = {}
 palettes.default = {
-    timer = {0.89, 0.212, 0.373},
+    timer = {0.761, 0.184, 0.318},
     background = {0.93, 0.93, 0.93},
 
     accent1 = {0.698, 0.376, 0.922},
