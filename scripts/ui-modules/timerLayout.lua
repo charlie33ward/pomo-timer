@@ -25,6 +25,8 @@ local solidColorShader = love.graphics.newShader[[
     }
 ]]
 
+local debug = {}
+
 local function formatTime(seconds)
     local min = math.floor(seconds / 60)
     local sec = math.floor(seconds % 60)
@@ -37,6 +39,7 @@ local circleButtonFactory = helium(function(param, view)
     local iconColor = param.backgroundColor
 
     local radius = math.floor(view.w * 0.065)
+    debug.radius = 'radius: ' .. radius
 
     local offset = {
         x = 0,
@@ -89,14 +92,25 @@ local mainTimerFactory = helium(function(param, view)
     local textH = font:getHeight(formattedTime)
     local textBoxW = math.floor(radius * 1.5)
 
+    local textCoords = {
+        x = x - math.floor(textBoxW / 2),
+        y = y - math.floor(textH / 2)
+    }
+
     return function()
         love.graphics.setColor(palette.timer[1], palette.timer[2], palette.timer[3], 1)
         love.graphics.ellipse('fill', x, y, radius, radius, 45)
         love.graphics.setColor(1, 1, 1, 1)
 
+
         love.graphics.setFont(font)
+
+        local shadowOffset = {x = 3, y = 2}
+        love.graphics.setColor(palette.textShadow[1], palette.textShadow[2], palette.textShadow[3], 1)
+        love.graphics.printf(formattedTime, textCoords.x+ shadowOffset.x, textCoords.y + shadowOffset.y, textBoxW, 'center')
+
         love.graphics.setColor(palette.background[1], palette.background[2], palette.background[3], 1)
-        love.graphics.printf(formattedTime, x - math.floor(textBoxW / 2), y - math.floor(textH / 2), textBoxW, 'center')
+        love.graphics.printf(formattedTime, textCoords.x, textCoords.y, textBoxW, 'center')
         love.graphics.setColor(1, 1, 1, 1)
 
     end
@@ -165,5 +179,18 @@ return helium(function(param, view)
         longRestButton:draw()
 
         dummy.tick = dummy.tick + 1
+
+
+        love.graphics.setColor(0, 0, 0, 1)
+        local debugY = 50
+
+        if debug then
+            for _, message in pairs(debug) do
+                love.graphics.print(message, 50, debugY)
+                debugY = debugY + 20
+            end
+        end
+
+        love.graphics.setColor(1, 1, 1, 1)
     end
 end)
