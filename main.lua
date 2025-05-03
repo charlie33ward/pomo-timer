@@ -75,6 +75,8 @@ function love.load()
     TimerUI = timerLayout({palette = palettes.default, timeData = timeTable, startTimerFunction = startTimerFunction}, screenDimensions.width, screenDimensions.height)
     TimerUI:draw()
 
+    debug.linewidth = love.graphics.getLineWidth()
+
 end
 
 

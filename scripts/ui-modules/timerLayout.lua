@@ -43,7 +43,7 @@ local circleButtonFactory = helium(function(param, view)
     local endButtonColor = baseIconColor
     local endIconColor = baseButtonColor
 
-    local radius = math.floor(view.w * 0.065)
+    local radius = param.radius
 
     local offset = {
         x = 0,
@@ -55,8 +55,8 @@ local circleButtonFactory = helium(function(param, view)
     end
 
     local iconScale = param.iconScale or 0.7
-    local iconX = math.floor(param.x - iconScale * (param.icon:getWidth() / 2) + offset.x)
-    local iconY = math.floor(param.y - iconScale * (param.icon:getHeight() / 2) + offset.y)
+    local iconX = math.floor(radius - iconScale * (param.icon:getWidth() / 2) + offset.x)
+    local iconY = math.floor(radius - iconScale * (param.icon:getHeight() / 2) + offset.y)
 
 
     local button = useState({
@@ -82,13 +82,14 @@ local circleButtonFactory = helium(function(param, view)
     local timerLength = 0.3
 
     local buttonState = useButton(
-        param.onClick,
+        param.startTimerFunction,
         nil,
         function()
             cancelTimer(temp.exitTimer)
 
             temp.enterTimer = timer.tween(timerLength, temp, {state = 1}, 'out-back', function()
-                button.iconColor = baseIconColor
+                button.iconColor = endIconColor
+                button.buttonColor = endButtonColor
             end)
 
             timer.during(timerLength, function()
@@ -98,33 +99,47 @@ local circleButtonFactory = helium(function(param, view)
                     baseIconColor[2] + ((endIconColor[2] - baseIconColor[2]) * temp.state),
                     baseIconColor[3] + ((endIconColor[3] - baseIconColor[3]) * temp.state)
                 }
+                button.buttonColor = {
+                    baseButtonColor[1] + ((endButtonColor[1] - baseButtonColor[1]) * temp.state),
+                    baseButtonColor[2] + ((endButtonColor[2] - baseButtonColor[2]) * temp.state),
+                    baseButtonColor[3] + ((endButtonColor[3] - baseButtonColor[3]) * temp.state)
+                }
             end)
         end,
         function()
             cancelTimer(temp.enterTimer)
 
             temp.exitTimer = timer.tween(timerLength, temp, {state = 0}, 'out-back', function()
-                button.textColor = baseIconColor
+                button.iconColor = baseIconColor
+                button.buttonColor = baseButtonColor
             end)
 
             timer.during(timerLength, function()
                 button.state = temp.state
-                button.textColor = {
+                button.iconColor = {
                     baseIconColor[1] + ((endIconColor[1] - baseIconColor[1]) * temp.state),
                     baseIconColor[2] + ((endIconColor[2] - baseIconColor[2]) * temp.state),
                     baseIconColor[3] + ((endIconColor[3] - baseIconColor[3]) * temp.state)
+                }
+                button.buttonColor = {
+                    baseButtonColor[1] + ((endButtonColor[1] - baseButtonColor[1]) * temp.state),
+                    baseButtonColor[2] + ((endButtonColor[2] - baseButtonColor[2]) * temp.state),
+                    baseButtonColor[3] + ((endButtonColor[3] - baseButtonColor[3]) * temp.state)
                 }
             end)
         end
     )
 
 
-    
-
 
     return function()
         love.graphics.setColor(button.buttonColor[1], button.buttonColor[2], button.buttonColor[3], 1)
-        love.graphics.ellipse('fill', param.x, param.y, radius, radius, 30)
+        love.graphics.ellipse('fill', radius, radius, radius, radius, 30)
+
+        love.graphics.setColor(baseButtonColor[1], baseButtonColor[2], baseButtonColor[3], 1)
+        love.graphics.setLineWidth(3)
+        love.graphics.ellipse('line', radius, radius, radius - 2, radius - 2, 30)
+        love.graphics.setLineWidth(1)
         love.graphics.setColor(1, 1, 1, 1)
 
         love.graphics.setShader(solidColorShader)
@@ -136,6 +151,10 @@ local circleButtonFactory = helium(function(param, view)
         love.graphics.setColor(1, 1, 1, 1)
 
         love.graphics.setShader()
+
+        -- love.graphics.setColor(0, 0, 0, 1)
+        -- love.graphics.rectangle('fill', 0, 0, 2000, 2000)
+        -- love.graphics.setColor(1, 1, 1, 1)
     end
 end)
 
@@ -191,9 +210,6 @@ local mainTimerFactory = helium(function(param, view)
         local shadowOffset = {x = 3, y = 2}
         love.graphics.setColor(palette.textShadow[1], palette.textShadow[2], palette.textShadow[3], 1)
         love.graphics.printf(timeData.formattedTime, textCoords.x+ shadowOffset.x, textCoords.y + shadowOffset.y, textBoxW, 'center')
-        
-        love.graphics.setColor(0, 0, 0, 1)
-        love.graphics.print(timeData.seconds, 100, 100)
 
         love.graphics.setColor(palette.background[1], palette.background[2], palette.background[3], 1)
         love.graphics.printf(timeData.formattedTime, textCoords.x, textCoords.y, textBoxW, 'center')
@@ -217,44 +233,55 @@ return helium(function(param, view)
 
     local mainTimer = mainTimerFactory({palette = param.palette, timeData = param.timeData}, view.w, view.h)
 
-    local x = math.floor(view.w * 0.7)
-    local y = math.floor(view.h * 0.32)
+    local radius = math.floor(view.w * 0.065)
+    local buttonSideLength = radius * 2
+
+    local workX = math.floor(view.w * 0.7)
+    local workY = math.floor(view.h * 0.32)
     local workButton = circleButtonFactory({
         buttonColor = palette.accent1,
         backgroundColor = palette.background,
-        x = x, 
-        y = y, 
         icon = workIcon,
         iconFilled = workIconFilled,
         iconScale = 0.7,
-        iconOffset = {x = 0, y = -3}
-    }, view.w, view.h)
+        iconOffset = {x = 0, y = -3},
+        radius = radius,
 
-    x = x + math.floor(view.w * 0.12)
-    y = math.floor(view.h * 0.56)
+        startTimerFunction = function()
+            param.startTimerFunction('work')
+        end    }, buttonSideLength, buttonSideLength)
+
+    local shortRestX = workX + math.floor(view.w * 0.12)
+    local shortRestY = math.floor(view.h * 0.56)
     local shortRestButton = circleButtonFactory({
         buttonColor = palette.accent2,
         backgroundColor = palette.background,
-        x = x, 
-        y = y, 
         icon = shortRestIcon,
         iconFilled = shortRestIconFilled,
         iconScale = 0.7,
-        iconOffset = {x = 0, y = 0}
-    }, view.w, view.h)
+        iconOffset = {x = 0, y = 0},
+        radius = radius,
 
-    local x = math.floor(view.w * 0.7)
-    y = math.floor(view.h * 0.8)
+        startTimerFunction = function()
+            param.startTimerFunction('shortRest')
+        end
+    }, buttonSideLength, buttonSideLength)
+
+    local longRestX = math.floor(view.w * 0.7)
+    local longRestY = math.floor(view.h * 0.8)
     local longRestButton = circleButtonFactory({
         buttonColor = palette.accent3,
-        backgroundColor = palette.background,
-        x = x, 
-        y = y, 
+        backgroundColor = palette.background, 
         icon = longRestIcon,
         iconFilled = longRestIconFilled,
         iconScale = 0.7,
-        iconOffset = {x = 0, y = 0}
-    }, view.w, view.h)
+        iconOffset = {x = 0, y = 0},
+        radius = radius,
+
+        startTimerFunction = function()
+            param.startTimerFunction('longRest')
+        end
+    }, buttonSideLength, buttonSideLength)
 
     
     return function()
@@ -268,9 +295,9 @@ return helium(function(param, view)
 
         mainTimer:draw()
 
-        workButton:draw()
-        shortRestButton:draw()
-        longRestButton:draw()
+        workButton:draw(workX - radius, workY - radius)
+        shortRestButton:draw(shortRestX - radius, shortRestY - radius)
+        longRestButton:draw(longRestX - radius, longRestY - radius)
 
         dummy.tick = dummy.tick + 1
 
