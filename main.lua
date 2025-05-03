@@ -37,24 +37,66 @@ local screenDimensions = {
     height = love.graphics.getHeight()
 }
 
+local timeTable = nil
+
+local function setTimeTable(newTable)
+    timeTable = newTable
+end
+
+local debug = {}
+local function drawDebug()
+
+    local timerObject = {}
+
+    love.graphics.setColor(0, 0, 0, 1)
+
+    local debugY = 110
+    if debug then
+        for _, message in pairs(debug) do
+            love.graphics.print(message, 50, debugY)
+            debugY = debugY + 20
+        end
+    end
+    love.graphics.setColor(1, 1, 1, 1)
+end
+
 function love.load()
     love.graphics.setLineStyle('smooth')
 
+    TimerManager = timerManager:new()
+    TimerManager:load(setTimeTable)
+
+    -- timeTable = TimerManager:startTimer('work')
+
+    local startTimerFunction = TimerManager:getStartTimer()
+
+
     timerScene:activate()
-    TimerUI = timerLayout({palette = palettes.default}, screenDimensions.width, screenDimensions.height)
+    TimerUI = timerLayout({palette = palettes.default, timeData = timeTable, startTimerFunction = startTimerFunction}, screenDimensions.width, screenDimensions.height)
     TimerUI:draw()
 
 end
 
+
+
+
 function love.update(dt)
     timer.update(dt)
+    TimerManager:update(dt)
 
+    if timeTable then
+        debug.sec = timeTable.seconds
+    end
 end
 
 function love.draw()
     timerScene:draw()
 
+    drawDebug()
+    TimerManager:drawDebug()
 end
+
+
 
 function love.keypressed(key, scancode, isrepeat)
     if key == 'escape' then

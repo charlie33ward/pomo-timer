@@ -1,5 +1,7 @@
 local helium = require 'libraries.helium'
 local useState = require 'libraries.helium.hooks.state'
+local useButton = require 'libraries.helium.shell.button'
+local timer = require 'libraries.timer'
 
 local timerFont = love.graphics.newFont('assets/fonts/monogram.ttf', 112)
 
@@ -35,11 +37,13 @@ local function formatTime(seconds)
 end
 
 local circleButtonFactory = helium(function(param, view)
-    local buttonColor = param.buttonColor
-    local iconColor = param.backgroundColor
+    local baseButtonColor = param.buttonColor
+    local baseIconColor = param.backgroundColor
+
+    local endButtonColor = baseIconColor
+    local endIconColor = baseButtonColor
 
     local radius = math.floor(view.w * 0.065)
-    debug.radius = 'radius: ' .. radius
 
     local offset = {
         x = 0,
@@ -54,22 +58,87 @@ local circleButtonFactory = helium(function(param, view)
     local iconX = math.floor(param.x - iconScale * (param.icon:getWidth() / 2) + offset.x)
     local iconY = math.floor(param.y - iconScale * (param.icon:getHeight() / 2) + offset.y)
 
+
+    local button = useState({
+        state = 0
+    })
+
+    button.buttonColor = baseButtonColor
+    button.iconColor = baseIconColor
+
+    local temp = {
+        state = 0,
+        enterTimer = nil,
+        exitTimer = nil
+    }
+
+    local function cancelTimer(timerRef)
+        if timerRef then
+            timer.cancel(timerRef)
+            timerRef = nil
+        end
+    end
+    
+    local timerLength = 0.3
+
+    local buttonState = useButton(
+        param.onClick,
+        nil,
+        function()
+            cancelTimer(temp.exitTimer)
+
+            temp.enterTimer = timer.tween(timerLength, temp, {state = 1}, 'out-back', function()
+                button.iconColor = baseIconColor
+            end)
+
+            timer.during(timerLength, function()
+                button.state = temp.state
+                button.iconColor = {
+                    baseIconColor[1] + ((endIconColor[1] - baseIconColor[1]) * temp.state),
+                    baseIconColor[2] + ((endIconColor[2] - baseIconColor[2]) * temp.state),
+                    baseIconColor[3] + ((endIconColor[3] - baseIconColor[3]) * temp.state)
+                }
+            end)
+        end,
+        function()
+            cancelTimer(temp.enterTimer)
+
+            temp.exitTimer = timer.tween(timerLength, temp, {state = 0}, 'out-back', function()
+                button.textColor = baseIconColor
+            end)
+
+            timer.during(timerLength, function()
+                button.state = temp.state
+                button.textColor = {
+                    baseIconColor[1] + ((endIconColor[1] - baseIconColor[1]) * temp.state),
+                    baseIconColor[2] + ((endIconColor[2] - baseIconColor[2]) * temp.state),
+                    baseIconColor[3] + ((endIconColor[3] - baseIconColor[3]) * temp.state)
+                }
+            end)
+        end
+    )
+
+
+    
+
+
     return function()
-        love.graphics.setColor(buttonColor[1], buttonColor[2], buttonColor[3], 1)
+        love.graphics.setColor(button.buttonColor[1], button.buttonColor[2], button.buttonColor[3], 1)
         love.graphics.ellipse('fill', param.x, param.y, radius, radius, 30)
         love.graphics.setColor(1, 1, 1, 1)
 
         love.graphics.setShader(solidColorShader)
-        solidColorShader:send("customColor", iconColor)
+        solidColorShader:send("customColor", button.iconColor)
         solidColorShader:send("opacity", 1)
 
-        love.graphics.setColor(iconColor[1], iconColor[2], iconColor[3], 1)
+        love.graphics.setColor(button.iconColor[1], button.iconColor[2], button.iconColor[3], 1)
         love.graphics.draw(param.icon, iconX, iconY, 0, iconScale, iconScale)
         love.graphics.setColor(1, 1, 1, 1)
 
         love.graphics.setShader()
     end
 end)
+
 
 local mainTimerFactory = helium(function(param, view)
     local palette = param.palette
@@ -78,26 +147,40 @@ local mainTimerFactory = helium(function(param, view)
     local y = math.floor(view.h * 0.55)
     local radius = math.floor(view.w * 0.2)
 
+    local timeData = useState({
+        seconds = 0
+    })
+
+
     local time = nil
     if param.time then
         time = timerLength - param.time
     else
-        time = 3680.32
+        time = 0
     end
 
-    local formattedTime = formatTime(time)
+    local prevTime = nil
     
     local font = timerFont
-    local textW = font:getWidth(formattedTime)
-    local textH = font:getHeight(formattedTime)
-    local textBoxW = math.floor(radius * 1.5)
 
-    local textCoords = {
-        x = x - math.floor(textBoxW / 2),
-        y = y - math.floor(textH / 2)
-    }
+    
 
     return function()
+        timeData.formattedTime = formatTime(timeData.seconds)
+
+        local textW = font:getWidth(timeData.formattedTime)
+        local textH = font:getHeight(timeData.formattedTime)
+        local textBoxW = math.floor(radius * 1.5)
+
+        if param.timeData then
+            timeData.seconds = param.timeData.seconds
+        end
+
+        local textCoords = {
+            x = x - math.floor(textBoxW / 2),
+            y = y - math.floor(textH / 2)
+        }
+        
         love.graphics.setColor(palette.timer[1], palette.timer[2], palette.timer[3], 1)
         love.graphics.ellipse('fill', x, y, radius, radius, 45)
         love.graphics.setColor(1, 1, 1, 1)
@@ -107,10 +190,13 @@ local mainTimerFactory = helium(function(param, view)
 
         local shadowOffset = {x = 3, y = 2}
         love.graphics.setColor(palette.textShadow[1], palette.textShadow[2], palette.textShadow[3], 1)
-        love.graphics.printf(formattedTime, textCoords.x+ shadowOffset.x, textCoords.y + shadowOffset.y, textBoxW, 'center')
+        love.graphics.printf(timeData.formattedTime, textCoords.x+ shadowOffset.x, textCoords.y + shadowOffset.y, textBoxW, 'center')
+        
+        love.graphics.setColor(0, 0, 0, 1)
+        love.graphics.print(timeData.seconds, 100, 100)
 
         love.graphics.setColor(palette.background[1], palette.background[2], palette.background[3], 1)
-        love.graphics.printf(formattedTime, textCoords.x, textCoords.y, textBoxW, 'center')
+        love.graphics.printf(timeData.formattedTime, textCoords.x, textCoords.y, textBoxW, 'center')
         love.graphics.setColor(1, 1, 1, 1)
 
     end
@@ -121,11 +207,15 @@ end)
 return helium(function(param, view)
     local palette = param.palette
 
+
     local dummy = useState({
         tick = 0
     })
+    local timeData = useState({
+        seconds = 0
+    })
 
-    local mainTimer = mainTimerFactory(param, view.w, view.h)
+    local mainTimer = mainTimerFactory({palette = param.palette, timeData = param.timeData}, view.w, view.h)
 
     local x = math.floor(view.w * 0.7)
     local y = math.floor(view.h * 0.32)
@@ -168,6 +258,10 @@ return helium(function(param, view)
 
     
     return function()
+        if param.timeData then
+            timeData.seconds = param.timeData.seconds
+        end
+
         love.graphics.setColor(palette.background[1], palette.background[2], palette.background[3], 1)
         love.graphics.rectangle('fill', 0, 0, view.w, view.h)
         love.graphics.setColor(1, 1, 1, 1)
