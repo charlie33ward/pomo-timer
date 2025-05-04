@@ -26,22 +26,22 @@ function timerManager:load(setTimeTable)
 end
 
 function timerManager:startTimer(timer)
-    debug.start = 'started timer: ' .. timer
     local timeData = {seconds = 0}
     local length = 0
 
     if timer == 'work' then
-        length = self.workLength * 60
+        length = self.workLength * 60 + 1
         timeData.seconds = length
         self.workTimer:tween(length, timeData, {seconds = 0})
         self.activeTimer = self.workTimer
     elseif timer == 'shortRest' then
-        length = self.shortRestLength * 60
+        length = self.shortRestLength * 60 + 1
         timeData.seconds = length
-        self.shortRestTimer:tween(length, timeData, {seconds = length})
+        self.shortRestTimer:tween(length, timeData, {seconds = 0})
         self.activeTimer = self.shortRestTimer
+
     elseif timer == 'longRest' then
-        length = self.longRestLength * 60
+        length = self.longRestLength * 60 + 1
         timeData.seconds = length
         self.longRestTimer:tween(length, timeData, {seconds = 0})
         self.activeTimer = self.longRestTimer
@@ -60,15 +60,11 @@ function timerManager:getStartTimer()
     end
 end
 
-function timerManager:getWorkTimer()
+function timerManager:resetCurrentTimer()
 
 end
 
-function timerManager:getShortRestTimer()
-
-end
-
-function timerManager:getLongRestTimer()
+function timerManager:pauseCurrentTimer()
 
 end
 

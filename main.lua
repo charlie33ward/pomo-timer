@@ -38,9 +38,24 @@ local screenDimensions = {
 }
 
 local timeTable = nil
+local TimerManager = nil
+
+
+local function createTimerUI(startTimerFunction)
+    TimerUI = timerLayout({palette = palettes.default, timeData = timeTable, startTimerFunction = startTimerFunction}, screenDimensions.width, screenDimensions.height)
+    TimerUI:draw()
+end
+
 
 local function setTimeTable(newTable)
     timeTable = newTable
+
+    if TimerUI then
+        TimerUI:destroy()
+    end
+
+    local startTimerFunction = TimerManager:getStartTimer()
+    createTimerUI(startTimerFunction)
 end
 
 local debug = {}
@@ -60,6 +75,8 @@ local function drawDebug()
     love.graphics.setColor(1, 1, 1, 1)
 end
 
+
+
 function love.load()
     love.graphics.setLineStyle('smooth')
 
@@ -72,10 +89,7 @@ function love.load()
 
 
     timerScene:activate()
-    TimerUI = timerLayout({palette = palettes.default, timeData = timeTable, startTimerFunction = startTimerFunction}, screenDimensions.width, screenDimensions.height)
-    TimerUI:draw()
-
-    debug.linewidth = love.graphics.getLineWidth()
+    createTimerUI(startTimerFunction)
 
 end
 
@@ -85,10 +99,6 @@ end
 function love.update(dt)
     timer.update(dt)
     TimerManager:update(dt)
-
-    if timeTable then
-        debug.sec = timeTable.seconds
-    end
 end
 
 function love.draw()
