@@ -165,6 +165,11 @@ local timerButtonFactory = helium(function(param, view)
         x = 0,
         y = 0
     }
+    if param.offset then
+        offset.x = param.offset.x
+        offset.y = param.offset.y
+    end
+    
     if param.iconOffset then
         offset.x = param.iconOffset.x
         offset.y = param.iconOffset.y
@@ -172,37 +177,57 @@ local timerButtonFactory = helium(function(param, view)
 
     local iconW = param.icon:getWidth()
     local iconH = param.icon:getHeight()
-    local iconScale = view.w / iconW
+    local iconScale = param.scale or view.w / iconW
 
     local iconX = math.floor(iconW / 2)
     local iconY = math.floor(iconH / 2)
 
     local button = useState({
         state = 0,
-        opacity = 1
+        opacity = 1,
+        frame = 0
     })
 
     local buttonState = useButton(
-        param.onClick,
-        nil,
         function()
-
+            if param.clickFunction then
+                param.clickFunction()
+            end
+            timer.during(param.timerLength, function()
+                button.opacity = 0.6
+            end)
+            timer.after(param.timerLength, function()
+                button.opacity = 1.0
+            end)
         end,
         function()
-
+            button.opacity = 1.0
+        end,
+        function()
+            button.opacity = 0.9
+        end,
+        function()
+            button.opacity = 1.0
         end
     )
 
     return function()
-        love.graphics.setColor(0, 0, 0, 1)
-        love.graphics.rectangle('fill', 0, 0, view.w, view.h)
-        love.graphics.setColor(1, 1, 1, 1)
+        
+        local shadowOffset = {x = 3, y = 2}
+
+        love.graphics.setShader(solidColorShader)
+        solidColorShader:send('customColor', {palette.textShadow[1], palette.textShadow[2], palette.textShadow[3], button.opacity})
+        solidColorShader:send('opacity', button.opacity)
+
+        love.graphics.draw(param.icon, offset.x + shadowOffset.x, offset.y + shadowOffset.y, 0, iconScale, iconScale)
 
         love.graphics.setShader(solidColorShader)
         solidColorShader:send('customColor', palette.background)
         solidColorShader:send('opacity', button.opacity)
 
-        love.graphics.draw(param.icon, 0, 0, 0, iconScale, iconScale)
+        love.graphics.draw(param.icon, offset.x, offset.y, 0, iconScale, iconScale)
+
+        
         
         love.graphics.setShader()
     end
@@ -229,15 +254,23 @@ local mainTimerFactory = helium(function(param, view)
     end
 
     local buttonSideLength = 40
+    timerLength = 0.05
 
     local pauseButton = timerButtonFactory({
         palette = param.palette,
-        icon = pauseIcon
+        icon = pauseIcon,
+        timerLength = 0.1,
+        clickFunction = function()
+            param.pauseTimerFunction()
+        end
     }, buttonSideLength, buttonSideLength)
 
     local resetButton = timerButtonFactory({
         palette = param.palette,
-        icon = resetIcon
+        icon = resetIcon,
+        scale = 0.74,
+        iconOffset = {x = -3.5, y = -4},
+        timerLength = 0.1
     }, buttonSideLength, buttonSideLength)
     
     --
@@ -274,8 +307,8 @@ local mainTimerFactory = helium(function(param, view)
         love.graphics.printf(timeData.formattedTime, textCoords.x, textCoords.y, textBoxW, 'center')
         love.graphics.setColor(1, 1, 1, 1)
 
-        pauseButton:draw(120, 210)
-        resetButton:draw(220, 210)
+        pauseButton:draw(148, 210)
+        resetButton:draw(280, 210)
 
     end
 end)
@@ -293,7 +326,7 @@ return helium(function(param, view)
         seconds = 0
     })
 
-    local mainTimer = mainTimerFactory({palette = param.palette, timeData = param.timeData}, view.w, view.h)
+    local mainTimer = mainTimerFactory({palette = param.palette, timeData = param.timeData, pauseTimerFunction = param.pauseTimerFunction}, view.w, view.h)
 
     local radius = math.floor(view.w * 0.06)
     local buttonSideLength = radius * 2 + 2

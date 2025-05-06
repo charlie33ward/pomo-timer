@@ -41,21 +41,25 @@ local timeTable = nil
 local TimerManager = nil
 
 
-local function createTimerUI(startTimerFunction)
-    TimerUI = timerLayout({palette = palettes.default, timeData = timeTable, startTimerFunction = startTimerFunction}, screenDimensions.width, screenDimensions.height)
+local function createTimerUI(startTimerFunction, pauseTimerFunction)
+    TimerUI = timerLayout({palette = palettes.default, timeData = timeTable, startTimerFunction = startTimerFunction, pauseTimerFunction = pauseTimerFunction}, screenDimensions.width, screenDimensions.height)
     TimerUI:draw()
 end
 
 
 local function setTimeTable(newTable)
-    timeTable = newTable
+    if newTable then
+        timeTable = newTable
+    end
 
     if TimerUI then
         TimerUI:destroy()
     end
 
     local startTimerFunction = TimerManager:getStartTimer()
-    createTimerUI(startTimerFunction)
+    local pauseTimerFunction = TimerManager:getPauseFunction()
+
+    createTimerUI(startTimerFunction, pauseTimerFunction)
 end
 
 local debug = {}
@@ -89,7 +93,7 @@ function love.load()
 
 
     timerScene:activate()
-    createTimerUI(startTimerFunction)
+    setTimeTable()
 
 end
 
@@ -97,7 +101,6 @@ end
 
 
 function love.update(dt)
-    timer.update(dt)
     TimerManager:update(dt)
 end
 

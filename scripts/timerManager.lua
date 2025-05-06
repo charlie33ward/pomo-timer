@@ -5,7 +5,10 @@ local timerManager = {
     shortRestLength = 15,
     longRestLength = 30,
 
-    activeTimer = nil
+    activeTimer = nil,
+    activeTimerData = nil,
+    remainingLength = nil,
+    isPaused = false
 }
 
 local debug = {}
@@ -49,6 +52,9 @@ function timerManager:startTimer(timer)
 
     self.timeData = timeData
     self.setTimeTable(timeData)
+    self.activeTimerData = timeData
+
+    self.isPaused = false
 
     return timeData
 end
@@ -65,12 +71,24 @@ function timerManager:resetCurrentTimer()
 end
 
 function timerManager:pauseCurrentTimer()
+    if self.isPaused == false then
+        self.isPaused = true
+    else
+        self.isPaused = false
+    end
+end
 
+function timerManager:getPauseFunction()
+    local manager = self
+    return function()
+        return manager:pauseCurrentTimer()
+    end
 end
 
 function timerManager:update(dt)
+    timer.update(dt)
 
-    if self.activeTimer then
+    if self.activeTimer and self.isPaused == false then
         self.activeTimer:update(dt)
     end
 end
