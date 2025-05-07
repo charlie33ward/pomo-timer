@@ -2,6 +2,7 @@ local helium = require 'libraries.helium'
 local useState = require 'libraries.helium.hooks.state'
 local useButton = require 'libraries.helium.shell.button'
 local timer = require 'libraries.timer'
+local anim8 = require 'libraries.anim8'
 
 local timerFont = love.graphics.newFont('assets/fonts/monogram.ttf', 224)
 timerFont:setFilter('nearest', 'nearest')
@@ -14,6 +15,15 @@ shortRestIcon:setFilter('linear', 'linear')
 longRestIcon:setFilter('linear', 'linear')
 
 local pauseIcon = love.graphics.newImage('assets/icons/icons8-pause-90.png')
+local pauseSheet = love.graphics.newImage('assets/icons/icons8-pause-sheet-50.png')
+pauseSheet:setFilter('linear', 'linear')
+local pauseGrid = anim8.newGrid(50, 50, pauseSheet:getWidth(), pauseSheet:getHeight())
+
+local pauseFrameLength = 0.03
+local pauseAnimForward = anim8.newAnimation(pauseGrid('1-14', 1), pauseFrameLength, 'pauseAtEnd')
+local pauseAnimBackward = anim8.newAnimation(pauseGrid('14-1', 1), pauseFrameLength, 'pauseAtEnd')
+local resetPauseAnimFunction = nil
+
 local resetIcon = love.graphics.newImage('assets/icons/icons8-reset-64.png')
 pauseIcon:setFilter('linear', 'linear')
 resetIcon:setFilter('linear', 'linear')
@@ -158,6 +168,8 @@ local circleButtonFactory = helium(function(param, view)
     end
 end)
 
+local dummyTickTimer = nil
+
 local timerButtonFactory = helium(function(param, view)
     local palette = param.palette
 
@@ -169,7 +181,6 @@ local timerButtonFactory = helium(function(param, view)
         offset.x = param.offset.x
         offset.y = param.offset.y
     end
-    
     if param.iconOffset then
         offset.x = param.iconOffset.x
         offset.y = param.iconOffset.y
@@ -185,20 +196,76 @@ local timerButtonFactory = helium(function(param, view)
     local button = useState({
         state = 0,
         opacity = 1,
-        frame = 0
+        frame = 0,
+        anim = nil,
+        animticks = 0
     })
+
+    local anims = nil
+    local length = pauseFrameLength * 14
+    if param.animsTable then
+        anims = {
+            forward = param.animsTable.forward,
+            backward = param.animsTable.backward
+        }
+    end
+
+    local function resetThisPauseAnim()
+        button.anim = anims.forward
+        button.anim:gotoFrame(1)
+        button.anim:pause()
+
+        button.state = 0
+    end
+
+    if param.registerPauseResetFunc then
+        param.registerPauseResetFunc(resetThisPauseAnim())
+    end
+
+    local function updatePauseAnimation()
+        if dummyTickTimer then
+            timer.cancel(dummyTickTimer)
+        end
+
+        dummyTickTimer = timer.during(length, function(dt)
+            button.anim:update(dt)
+            button.animticks = button.animticks + 1
+        end)
+
+        timer.after(length, function()
+            if button.state == 0 then
+                button.state = 1
+                button.anim = anims.backward
+                button.anim:gotoFrame(1)
+                button.anim:pause()
+            else
+                resetThisPauseAnim()
+            end
+        end)
+    end
+
+    if button.anim then
+        resetThisPauseAnim()
+    end
 
     local buttonState = useButton(
         function()
+            -- if button.state == 0 then
             if param.clickFunction then
                 param.clickFunction()
             end
             timer.during(param.timerLength, function()
                 button.opacity = 0.6
             end)
+
             timer.after(param.timerLength, function()
                 button.opacity = 1.0
             end)
+
+            if button.anim then
+                button.anim:resume()
+                updatePauseAnimation()
+            end
         end,
         function()
             button.opacity = 1.0
@@ -212,6 +279,10 @@ local timerButtonFactory = helium(function(param, view)
     )
 
     return function()
+
+        if button.anim then
+            button.frame = button.anim.position
+        end
         
         local shadowOffset = {x = 3, y = 2}
 
@@ -219,13 +290,25 @@ local timerButtonFactory = helium(function(param, view)
         solidColorShader:send('customColor', {palette.textShadow[1], palette.textShadow[2], palette.textShadow[3], button.opacity})
         solidColorShader:send('opacity', button.opacity)
 
-        love.graphics.draw(param.icon, offset.x + shadowOffset.x, offset.y + shadowOffset.y, 0, iconScale, iconScale)
+        local x = offset.x + shadowOffset.x
+        local y = offset.y + shadowOffset.y
+
+        if anims then
+            button.anim:draw(pauseSheet, x, y, 0, iconScale, iconScale)
+        else
+
+            love.graphics.draw(param.icon, x, y, 0, iconScale, iconScale)
+        end
 
         love.graphics.setShader(solidColorShader)
         solidColorShader:send('customColor', palette.background)
         solidColorShader:send('opacity', button.opacity)
 
-        love.graphics.draw(param.icon, offset.x, offset.y, 0, iconScale, iconScale)
+        if anims then
+            button.anim:draw(pauseSheet, offset.x, offset.y, 0, iconScale, iconScale)
+        else
+            love.graphics.draw(param.icon, offset.x, offset.y, 0, iconScale, iconScale)
+        end
 
         
         
@@ -259,10 +342,18 @@ local mainTimerFactory = helium(function(param, view)
     local pauseButton = timerButtonFactory({
         palette = param.palette,
         icon = pauseIcon,
+        iconOffset = {x = -3.5, y = -2},
+        scale = 0.90,
+        animsTable = {
+            forward = pauseAnimForward,
+            backward = pauseAnimBackward
+        },
         timerLength = 0.1,
         clickFunction = function()
             param.pauseTimerFunction()
-        end
+        end,
+
+        registerPauseResetFunc = function(fn) resetPauseAnimFunction = fn end        
     }, buttonSideLength, buttonSideLength)
 
     local resetButton = timerButtonFactory({

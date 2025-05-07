@@ -1,7 +1,6 @@
 love.graphics.setDefaultFilter("linear", "linear")
 
 local timer = require 'libraries.timer'
-local anim8 = require 'libraries.anim8'
 local helium = require 'libraries.helium'
 local timerManager = require 'scripts.timerManager'
 
