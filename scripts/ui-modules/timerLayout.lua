@@ -295,8 +295,8 @@ local timerButtonFactory = helium(function(param, view)
         local shadowOffset = {x = 3, y = 2}
 
         love.graphics.setShader(solidColorShader)
-        solidColorShader:send('customColor', {palette.timer[1], palette.timer[2], palette.timer[3], button.opacity - 0.2})
-        solidColorShader:send('opacity', button.opacity)
+        solidColorShader:send('customColor', param.accentColor)
+        solidColorShader:send('opacity', button.opacity - 0.2)
 
         local x = offset.x + shadowOffset.x
         local y = offset.y + shadowOffset.y
@@ -357,6 +357,7 @@ local mainTimerFactory = helium(function(param, view)
             backward = pauseAnimBackward
         },
         timerLength = 0.1,
+        accentColor = palette.pauseAccent,
         clickFunction = function()
             param.pauseTimerFunction()
         end,
@@ -370,6 +371,7 @@ local mainTimerFactory = helium(function(param, view)
         scale = 0.74,
         iconOffset = {x = -3.5, y = -4},
         timerLength = 0.1,
+        accentColor = palette.resetAccent,
 
         clickFunction = function()
             param.resetCurrentTimerFunction()
@@ -435,7 +437,30 @@ local settingsButton = helium(function(param, view)
     local iconH = param.icon:getHeight()
     local iconScale = param.scale or view.w / iconW
 
+    local buttonState = useButton(
+        function ()
+            if param.clickFunction then
+                param.clickFunction()
+            end
+            
+            timer.during(param.timerLength, function()
+                button.opacity = 0.6
+            end)
 
+            timer.after(param.timerLength, function()
+                button.opacity = 1.0
+            end)
+        end,
+        function()
+            button.opacity = 1.0
+        end,
+        function()
+            button.opacity = 0.9
+        end,
+        function()
+            button.opacity = 1.0
+        end
+    )
 
     return function()
 
@@ -521,7 +546,8 @@ return helium(function(param, view)
     local settingsButtonWidth = 50
     local settingsButton = settingsButton({
         palette = palette,
-        icon = settingsIcon
+        icon = settingsIcon,
+        timerLength = 0.1
     }, 72, 72)
 
     

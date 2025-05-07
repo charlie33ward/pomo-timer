@@ -15,6 +15,9 @@ palettes.default = {
     accent2 = {0.698, 0.376, 0.922},
     accent3 = {0.404, 0.541, 0.91},
 
+    pauseAccent = {0.698, 0.376, 0.922},
+    resetAccent = {0.404, 0.541, 0.91},
+
     textShadow = {0.251, 0, 0.251},
     darkerTextShadow = {0.085, 0, 0.085, 0.92}
     -- darkPurple = {0.051, 0.004, 0.102, 1},
