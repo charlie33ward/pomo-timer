@@ -40,8 +40,8 @@ local timeTable = nil
 local TimerManager = nil
 
 
-local function createTimerUI(startTimerFunction, pauseTimerFunction)
-    TimerUI = timerLayout({palette = palettes.default, timeData = timeTable, startTimerFunction = startTimerFunction, pauseTimerFunction = pauseTimerFunction}, screenDimensions.width, screenDimensions.height)
+local function createTimerUI(startTimerFunction, pauseTimerFunction, resetCurrentTimerFunction)
+    TimerUI = timerLayout({palette = palettes.default, timeData = timeTable, startTimerFunction = startTimerFunction, pauseTimerFunction = pauseTimerFunction, resetCurrentTimerFunction = resetCurrentTimerFunction}, screenDimensions.width, screenDimensions.height)
     TimerUI:draw()
 end
 
@@ -57,8 +57,9 @@ local function setTimeTable(newTable)
 
     local startTimerFunction = TimerManager:getStartTimer()
     local pauseTimerFunction = TimerManager:getPauseFunction()
+    local resetCurrentTimerFunction = TimerManager:getResetTimer()
 
-    createTimerUI(startTimerFunction, pauseTimerFunction)
+    createTimerUI(startTimerFunction, pauseTimerFunction, resetCurrentTimerFunction)
 end
 
 local debug = {}

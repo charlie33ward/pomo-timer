@@ -53,6 +53,7 @@ function timerManager:startTimer(timer)
     self.timeData = timeData
     self.setTimeTable(timeData)
     self.activeTimerData = timeData
+    self.lastTimer = timer
 
     self.isPaused = false
 
@@ -67,7 +68,14 @@ function timerManager:getStartTimer()
 end
 
 function timerManager:resetCurrentTimer()
+    self:startTimer(self.lastTimer)
+end
 
+function timerManager:getResetTimer()
+    local manager = self
+    return function()
+        return manager:resetCurrentTimer()
+    end
 end
 
 function timerManager:pauseCurrentTimer()

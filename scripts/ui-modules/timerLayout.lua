@@ -19,7 +19,7 @@ local pauseSheet = love.graphics.newImage('assets/icons/icons8-pause-sheet-50.pn
 pauseSheet:setFilter('linear', 'linear')
 local pauseGrid = anim8.newGrid(50, 50, pauseSheet:getWidth(), pauseSheet:getHeight())
 
-local pauseFrameLength = 0.03
+local pauseFrameLength = 0.02
 local pauseAnimForward = anim8.newAnimation(pauseGrid('1-14', 1), pauseFrameLength, 'pauseAtEnd')
 local pauseAnimBackward = anim8.newAnimation(pauseGrid('14-1', 1), pauseFrameLength, 'pauseAtEnd')
 local resetPauseAnimFunction = nil
@@ -353,7 +353,7 @@ local mainTimerFactory = helium(function(param, view)
             param.pauseTimerFunction()
         end,
 
-        registerPauseResetFunc = function(fn) resetPauseAnimFunction = fn end        
+        registerPauseResetFunc = function(fn) resetPauseAnimFunction = fn end
     }, buttonSideLength, buttonSideLength)
 
     local resetButton = timerButtonFactory({
@@ -361,7 +361,11 @@ local mainTimerFactory = helium(function(param, view)
         icon = resetIcon,
         scale = 0.74,
         iconOffset = {x = -3.5, y = -4},
-        timerLength = 0.1
+        timerLength = 0.1,
+
+        clickFunction = function()
+            param.resetCurrentTimerFunction()
+        end
     }, buttonSideLength, buttonSideLength)
     
     --
@@ -379,8 +383,8 @@ local mainTimerFactory = helium(function(param, view)
         end
 
         local textCoords = {
-            x = math.floor(x - 1.57 * (radius)),
-            y = math.floor(y - 3.3 * (textH / 2))
+            x = -801 * (650 / view.w),
+            y = 37 * (300 / view.h)
         }
         
         love.graphics.setColor(palette.timer[1], palette.timer[2], palette.timer[3], 1)
@@ -391,8 +395,9 @@ local mainTimerFactory = helium(function(param, view)
         love.graphics.setFont(font)
 
         local shadowOffset = {x = 3, y = 2}
+
         love.graphics.setColor(palette.textShadow[1], palette.textShadow[2], palette.textShadow[3], 1)
-        love.graphics.printf(timeData.formattedTime, textCoords.x+ shadowOffset.x, textCoords.y + shadowOffset.y, textBoxW, 'center')
+        love.graphics.printf(timeData.formattedTime, textCoords.x + shadowOffset.x, textCoords.y + shadowOffset.y, textBoxW, 'center')
 
         love.graphics.setColor(palette.background[1], palette.background[2], palette.background[3], 1)
         love.graphics.printf(timeData.formattedTime, textCoords.x, textCoords.y, textBoxW, 'center')
@@ -417,7 +422,7 @@ return helium(function(param, view)
         seconds = 0
     })
 
-    local mainTimer = mainTimerFactory({palette = param.palette, timeData = param.timeData, pauseTimerFunction = param.pauseTimerFunction}, view.w, view.h)
+    local mainTimer = mainTimerFactory({palette = param.palette, timeData = param.timeData, pauseTimerFunction = param.pauseTimerFunction, resetCurrentTimerFunction = param.resetCurrentTimerFunction}, view.w, view.h)
 
     local radius = math.floor(view.w * 0.06)
     local buttonSideLength = radius * 2 + 2
