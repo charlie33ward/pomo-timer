@@ -1,8 +1,9 @@
 local timer = require 'libraries.timer'
+local audioManager = require 'scripts.audioManager'
 
 local timerManager = {
     workLength = 50,
-    shortRestLength = 15,
+    shortRestLength = 0.5,
     longRestLength = 30,
 
     activeTimer = nil,
@@ -17,6 +18,7 @@ function timerManager:new()
     local manager = {}
     setmetatable(manager, self)
     self.__index = self
+    self.audioManager = audioManager:new()
     return manager
 end
 
@@ -26,6 +28,8 @@ function timerManager:load(setTimeTable)
     self.longRestTimer = timer.new()
 
     self.setTimeTable = setTimeTable
+
+    self.audioManager:load()
 end
 
 function timerManager:startTimer(timer)

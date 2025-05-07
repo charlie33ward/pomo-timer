@@ -4,8 +4,12 @@ local useButton = require 'libraries.helium.shell.button'
 local timer = require 'libraries.timer'
 local anim8 = require 'libraries.anim8'
 
-local timerFont = love.graphics.newFont('assets/fonts/monogram.ttf', 224)
-timerFont:setFilter('nearest', 'nearest')
+local gruppoFont = love.graphics.newFont('assets/fonts/Gruppo-Regular.ttf', 180)
+local monogramFont = love.graphics.newFont('assets/fonts/monogram.ttf', 224)
+monogramFont:setFilter('nearest', 'nearest')
+
+local timerFont = monogramFont
+
 
 local workIcon = love.graphics.newImage('assets/icons/icons8-work-100.png')
 local shortRestIcon = love.graphics.newImage('assets/icons/icons8-tea-100.png')
@@ -13,6 +17,9 @@ local longRestIcon = love.graphics.newImage('assets/icons/icons8-resting-100.png
 workIcon:setFilter('linear', 'linear')
 shortRestIcon:setFilter('linear', 'linear')
 longRestIcon:setFilter('linear', 'linear')
+
+local settingsIcon = love.graphics.newImage('assets/icons/icons8-settings-96.png')
+settingsIcon:setFilter('linear', 'linear')
 
 local pauseIcon = love.graphics.newImage('assets/icons/icons8-pause-90.png')
 local pauseSheet = love.graphics.newImage('assets/icons/icons8-pause-sheet-50.png')
@@ -27,6 +34,8 @@ local resetPauseAnimFunction = nil
 local resetIcon = love.graphics.newImage('assets/icons/icons8-reset-64.png')
 pauseIcon:setFilter('linear', 'linear')
 resetIcon:setFilter('linear', 'linear')
+
+
 
 local timerLength = 50 * 60
 
@@ -250,7 +259,6 @@ local timerButtonFactory = helium(function(param, view)
 
     local buttonState = useButton(
         function()
-            -- if button.state == 0 then
             if param.clickFunction then
                 param.clickFunction()
             end
@@ -287,13 +295,13 @@ local timerButtonFactory = helium(function(param, view)
         local shadowOffset = {x = 3, y = 2}
 
         love.graphics.setShader(solidColorShader)
-        solidColorShader:send('customColor', {palette.textShadow[1], palette.textShadow[2], palette.textShadow[3], button.opacity})
+        solidColorShader:send('customColor', {palette.timer[1], palette.timer[2], palette.timer[3], button.opacity - 0.2})
         solidColorShader:send('opacity', button.opacity)
 
         local x = offset.x + shadowOffset.x
         local y = offset.y + shadowOffset.y
 
-        if anims then
+        if button.anim then
             button.anim:draw(pauseSheet, x, y, 0, iconScale, iconScale)
         else
 
@@ -304,7 +312,7 @@ local timerButtonFactory = helium(function(param, view)
         solidColorShader:send('customColor', palette.background)
         solidColorShader:send('opacity', button.opacity)
 
-        if anims then
+        if button.anim then
             button.anim:draw(pauseSheet, offset.x, offset.y, 0, iconScale, iconScale)
         else
             love.graphics.draw(param.icon, offset.x, offset.y, 0, iconScale, iconScale)
@@ -384,7 +392,7 @@ local mainTimerFactory = helium(function(param, view)
 
         local textCoords = {
             x = -801 * (650 / view.w),
-            y = 37 * (300 / view.h)
+            y = 37 * (300 / view.h) + 14
         }
         
         love.graphics.setColor(palette.timer[1], palette.timer[2], palette.timer[3], 1)
@@ -396,19 +404,58 @@ local mainTimerFactory = helium(function(param, view)
 
         local shadowOffset = {x = 3, y = 2}
 
-        love.graphics.setColor(palette.textShadow[1], palette.textShadow[2], palette.textShadow[3], 1)
+        love.graphics.setColor(palette.darkerTextShadow[1], palette.darkerTextShadow[2], palette.darkerTextShadow[3], palette.darkerTextShadow[4])
+        love.graphics.rectangle('fill', 14, 70, 440, textH + 30, 16, 16, 20)
+
+        love.graphics.setColor(palette.timer[1], palette.timer[2], palette.timer[3], 0.8)
         love.graphics.printf(timeData.formattedTime, textCoords.x + shadowOffset.x, textCoords.y + shadowOffset.y, textBoxW, 'center')
+
+        -- love.graphics.setColor(palette.textShadow[1], palette.textShadow[2], palette.textShadow[3], 1)
+        -- love.graphics.printf(timeData.formattedTime, textCoords.x + shadowOffset.x, textCoords.y + shadowOffset.y, textBoxW, 'center')
 
         love.graphics.setColor(palette.background[1], palette.background[2], palette.background[3], 1)
         love.graphics.printf(timeData.formattedTime, textCoords.x, textCoords.y, textBoxW, 'center')
         love.graphics.setColor(1, 1, 1, 1)
 
-        pauseButton:draw(148, 210)
-        resetButton:draw(280, 210)
+        pauseButton:draw(148, 220)
+        resetButton:draw(280, 220)
 
     end
 end)
 
+local settingsButton = helium(function(param, view)
+    local palette = param.palette
+
+    local button = useState({
+        state = 0,
+        opacity = 1
+    })
+
+    local iconW = param.icon:getWidth()
+    local iconH = param.icon:getHeight()
+    local iconScale = param.scale or view.w / iconW
+
+
+
+    return function()
+
+        local shadowOffset = {x = 3, y = 2}
+
+        love.graphics.setShader(solidColorShader)
+        solidColorShader:send('customColor', palette.timer)
+        solidColorShader:send('opacity', button.opacity)
+        love.graphics.draw(param.icon, shadowOffset.x, shadowOffset.y, 0, iconScale, iconScale)
+
+        love.graphics.setShader(solidColorShader)
+        solidColorShader:send('customColor', palette.textShadow)
+        solidColorShader:send('opacity', button.opacity)
+        love.graphics.draw(param.icon, 0, 0, 0, iconScale, iconScale)
+
+        
+
+        love.graphics.setShader()
+    end
+end)
 
 
 return helium(function(param, view)
@@ -471,6 +518,12 @@ return helium(function(param, view)
         end
     }, buttonSideLength, buttonSideLength)
 
+    local settingsButtonWidth = 50
+    local settingsButton = settingsButton({
+        palette = palette,
+        icon = settingsIcon
+    }, 72, 72)
+
     
     return function()
         if param.timeData then
@@ -486,6 +539,8 @@ return helium(function(param, view)
         workButton:draw(workX - radius, workY - radius)
         shortRestButton:draw(shortRestX - radius, shortRestY - radius)
         longRestButton:draw(longRestX - radius, longRestY - radius)
+
+        settingsButton:draw(view.w - (settingsButtonWidth + 20), 0)
 
         dummy.tick = dummy.tick + 1
 
