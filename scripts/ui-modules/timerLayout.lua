@@ -55,6 +55,10 @@ local solidColorShader = love.graphics.newShader[[
 local debug = {}
 
 local function formatTime(seconds)
+    if seconds < 0 then
+        seconds = 0
+    end
+
     local min = math.floor(seconds / 60)
     local sec = math.floor(seconds % 60)
     
@@ -259,13 +263,12 @@ local timerButtonFactory = helium(function(param, view)
 
     local buttonState = useButton(
         function()
+            
+            button.opacity = 0.6
             if param.clickFunction then
                 param.clickFunction()
             end
-            timer.during(param.timerLength, function()
-                button.opacity = 0.6
-            end)
-
+            
             timer.after(param.timerLength, function()
                 button.opacity = 1.0
             end)
@@ -566,7 +569,7 @@ return helium(function(param, view)
         shortRestButton:draw(shortRestX - radius, shortRestY - radius)
         longRestButton:draw(longRestX - radius, longRestY - radius)
 
-        settingsButton:draw(view.w - (settingsButtonWidth + 20), 0)
+        settingsButton:draw(view.w - (settingsButtonWidth + 26), 6)
 
         dummy.tick = dummy.tick + 1
 

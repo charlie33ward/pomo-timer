@@ -3,7 +3,7 @@ local audioManager = require 'scripts.audioManager'
 
 local timerManager = {
     workLength = 50,
-    shortRestLength = 0.5,
+    shortRestLength = 15,
     longRestLength = 30,
 
     activeTimer = nil,
@@ -28,7 +28,6 @@ function timerManager:load(setTimeTable)
     self.longRestTimer = timer.new()
 
     self.setTimeTable = setTimeTable
-
     self.audioManager:load()
 end
 
@@ -36,21 +35,23 @@ function timerManager:startTimer(timer)
     local timeData = {seconds = 0}
     local length = 0
 
+    local triggerEndTimer = function() self:onEndTimer(timer) end
+
     if timer == 'work' then
         length = self.workLength * 60 + 1
         timeData.seconds = length
-        self.workTimer:tween(length, timeData, {seconds = 0})
+        self.workTimer:tween(length, timeData, {seconds = 1}, 'linear', triggerEndTimer)
         self.activeTimer = self.workTimer
     elseif timer == 'shortRest' then
         length = self.shortRestLength * 60 + 1
         timeData.seconds = length
-        self.shortRestTimer:tween(length, timeData, {seconds = 0})
+        self.shortRestTimer:tween(length, timeData, {seconds = 1}, 'linear', triggerEndTimer)
         self.activeTimer = self.shortRestTimer
 
     elseif timer == 'longRest' then
         length = self.longRestLength * 60 + 1
         timeData.seconds = length
-        self.longRestTimer:tween(length, timeData, {seconds = 0})
+        self.longRestTimer:tween(length, timeData, {seconds = 1}, 'linear', triggerEndTimer)
         self.activeTimer = self.longRestTimer
     end
 
@@ -62,6 +63,11 @@ function timerManager:startTimer(timer)
     self.isPaused = false
 
     return timeData
+end
+
+function timerManager:onEndTimer(timer)
+
+    self.audioManager:playEndTimerSound(timer)
 end
 
 function timerManager:getStartTimer()
